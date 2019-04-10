@@ -9,6 +9,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.dnd.DropTarget;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -19,13 +20,15 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Stream;
 
+
 public class Main {
 
 static String deviceId, deviceModel, deviceProcessor;
 static Map deviceDetails = new HashMap();
 static boolean connectedDevice = false;
-static JLabel uninstallSatusLabel;
+static JLabel uninstallSatusLabel,  dNdLabel,apkName;
 static  JFrame frame;
+
 
 public static void main(String[] args) {
 
@@ -300,15 +303,52 @@ public static void main(String[] args) {
 
 ///////////////////////////////////////////////////////// Clean phone panel ////////////////////////////////////////////
 
+//////////////////////////////////////////////////////// Sideloading panel /////////////////////////////////////////////
 
+
+
+        JPanel  sideloadPanel = new JPanel();
+        sideloadPanel.setLayout(null);
+        sideloadPanel.setVisible(false);
+        sideloadPanel.setSize(500,500);
+        sideloadPanel.setVisible(false);
+
+        dNdLabel = new JLabel();
+        dNdLabel.setVisible(true);
+        dNdLabel.setText("Drag and drop files here");
+        dNdLabel.setBounds(100, 200, 400, 20);
+        dNdLabel.setFont(statusFont);
+        sideloadPanel.add(dNdLabel);
+
+        apkName = new JLabel();
+        apkName.setVisible(true);
+        apkName.setText("");
+
+        apkName.setBounds(10, 250, 400, 20);
+
+        apkName.setFont(statusFont);
+        sideloadPanel.add(apkName);
+
+        frame.setTitle("Side-load");
+        frame.repaint();
+
+        MyDragDropListener dragDropListener =new MyDragDropListener();
+
+        new DropTarget(sideloadPanel, dragDropListener);
+
+
+
+/////////////////////////////////////////////////////// Sideloading panel //////////////////////////////////////////////
         JMenuBar menuBar = new JMenuBar();
 
         JMenu menu = new JMenu("Menu");
-        JMenuItem  cleanPhoneMenuItem = new JMenuItem();
-        cleanPhoneMenuItem.addActionListener(e -> {
+        JMenuItem  cleanDeviceMenuItem = new JMenuItem();
+        cleanDeviceMenuItem.addActionListener(e -> {
 
             batchenatorPanel.setVisible(false);
             cleanDeviceMainPanel.setVisible(true);
+            sideloadPanel.setVisible(false);
+            frame.setTitle("Clean device");
             frame.repaint();
 
             try
@@ -373,6 +413,9 @@ public static void main(String[] args) {
 
             cleanDeviceMainPanel.setVisible(false);
             batchenatorPanel.setVisible(true);
+            sideloadPanel.setVisible(false);
+            frame.setTitle("The Bacth-en-nator");
+            frame.repaint();
             frame.repaint();
 
 
@@ -381,20 +424,24 @@ public static void main(String[] args) {
         JMenuItem  sideLoadApkMenuItem = new JMenuItem();
         sideLoadApkMenuItem.addActionListener(e -> {
 
+            cleanDeviceMainPanel.setVisible(false);
+            batchenatorPanel.setVisible(false);
+            sideloadPanel.setVisible(true);
         });
 
         menuBar.add(menu);
         batchDownloadApksMenuItem.setText("The Batch-en-ator");
-        cleanPhoneMenuItem.setText("Clean device");
+        cleanDeviceMenuItem.setText("Clean device");
         sideLoadApkMenuItem.setText("Sideloading");
 
         menu.add(batchDownloadApksMenuItem);
         menu.add(sideLoadApkMenuItem);
-        menu.add(cleanPhoneMenuItem);
+        menu.add(cleanDeviceMenuItem);
 
         frame.setJMenuBar(menuBar);
         frame.add(batchenatorPanel);
         frame.add(cleanDeviceMainPanel);
+        frame.add(sideloadPanel);
         frame.setSize(500,500);
         frame.setJMenuBar(menuBar);
 
@@ -421,21 +468,30 @@ public static void main(String[] args) {
 
                             ((LinkedList<String>) packageNamesToUninstall).push(o.toString().split("package:")[1]);
                         }
-
-                        while(packageNamesToUninstall.peek()!=null)
+                        if(packageNamesToUninstall.size()==0)
                         {
-                            String temp = packageNamesToUninstall.peek();
-                            System.out.println("Uninstalling "+(temp));
-                            Process uninstallPackage = rt.exec("adb uninstall "+((LinkedList<String>) packageNamesToUninstall).pop());
-                            input = new BufferedReader(new InputStreamReader(uninstallPackage.getInputStream()));
-                            lines = input.lines();
-                            for (Object o : lines.toArray()) {
-                                System.out.println("Status :"+o.toString());
-                               uninstallSatusLabel.setText("Status: Uninstalling "+temp+" - "+o.toString());
-                               frame.repaint();
-                            }
-
+                            uninstallSatusLabel.setText("Status: Couldn't find any 3rd part apps to uninstall");
+                            frame.repaint();
                         }
+                        else
+                        {
+                            while(packageNamesToUninstall.peek()!=null)
+                            {
+                                String temp = packageNamesToUninstall.peek();
+                                System.out.println("Uninstalling "+(temp));
+                                Process uninstallPackage = rt.exec("adb uninstall "+((LinkedList<String>) packageNamesToUninstall).pop());
+                                input = new BufferedReader(new InputStreamReader(uninstallPackage.getInputStream()));
+                                lines = input.lines();
+                                for (Object o : lines.toArray()) {
+                                    System.out.println("Status :"+o.toString());
+                                    uninstallSatusLabel.setText("Status: Uninstalling "+temp+" - "+o.toString());
+                                    frame.repaint();
+                                }
+
+                            }
+                        }
+
+
 
                     } catch (Exception e) {
 
