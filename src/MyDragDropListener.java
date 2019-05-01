@@ -2,11 +2,16 @@ import javax.swing.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.dnd.*;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.util.List;
+import java.util.stream.Stream;
 
 class MyDragDropListener implements DropTargetListener {
 
+    String apkName;
+    String apkFile;
     @Override
     public void drop(DropTargetDropEvent event) {
 
@@ -24,6 +29,7 @@ class MyDragDropListener implements DropTargetListener {
 
             try {
 
+
                 // If the drop items are files
                 if (flavor.isFlavorJavaFileListType()) {
 
@@ -33,20 +39,22 @@ class MyDragDropListener implements DropTargetListener {
                     for (int i = 0; i < files.size(); i++) {
                         System.out.println("File path is '" + (File)files.get(i)+"'.");
                         String [] filePath = files.get(i).toString().split("/");
-                        String apkName = filePath[filePath.length-1];
-
-                        Main.apkName.setText(apkName);
+                        apkName = filePath[filePath.length-1];
+                        apkFile = files.get(i).toString();
+                       Main.apkName.setText(apkName);
                         Main.dNdLabel.setText("Installing apk");
                        Main.dNdLabel.setHorizontalAlignment(SwingConstants.CENTER);
                         Main.frame.repaint();
                     }
-                    // Loop them through
-                   /* for (File file: files) {
+                    Runtime rt = Runtime.getRuntime();
+                    Process installApk = rt.exec("adb install "+apkFile);
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(installApk.getInputStream()));
 
-                        // Print out the file path
-
-
-                    }*/
+                    Stream<String> lines;
+                    lines =  bufferedReader.lines();
+                    for (Object o : lines.toArray()) {
+                        System.out.println("Status :"+o.toString());
+                    }
 
                 }
 

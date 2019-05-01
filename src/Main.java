@@ -4,7 +4,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import javax.swing.*;
@@ -28,6 +27,7 @@ static Map deviceDetails = new HashMap();
 static boolean connectedDevice = false;
 static JLabel uninstallSatusLabel,  dNdLabel,apkName;
 static  JFrame frame;
+static JButton uninstall3rdPartyPackagesButton;
 
 
 public static void main(String[] args) {
@@ -63,12 +63,11 @@ public static void main(String[] args) {
         WebDriverWait wait = new WebDriverWait(driver, 2);
         String result = "";
         try{
-
             driver.get("https://play.google.com/store/apps/details?id="+packageName);
-
-            if(wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@id=\"fcxH9b\"]/div[4]/c-wiz/div/div[2]/div/div[1]/div/c-wiz[1]/c-wiz[1]/div/div[2]/div/div[2]/div/div[2]/div[2]/c-wiz/c-wiz/div/span/button"))).isDisplayed())
+            Thread.sleep(5000);
+            if(driver.findElement(By.xpath("//*[@id=\"fcxH9b\"]/div[5]/c-wiz/div/div[2]/div/div[1]/div/c-wiz[1]/c-wiz[1]/div/div[2]/div/div[2]/div/div[2]/div[2]/c-wiz/c-wiz/div/span/button")).isDisplayed())
             {
-                driver.findElement(By.xpath("//*[@id=\"fcxH9b\"]/div[4]/c-wiz/div/div[2]/div/div[1]/div/c-wiz[1]/c-wiz[1]/div/div[2]/div/div[2]/div/div[2]/div[2]/c-wiz/c-wiz/div/span/button")).click();
+                driver.findElement(By.cssSelector("#fcxH9b > div.WpDbMd > c-wiz > div > div.ZfcPIb > div > div.JNury.Ekdcne > div > c-wiz:nth-child(1) > c-wiz:nth-child(1) > div > div.D0ZKYe > div > div.wE7q7b > div > div.hfWwZc > div.NznqUc > c-wiz > c-wiz > div > span > button")).click();
                 Thread.sleep(4000);
                 driver.switchTo().frame(driver.switchTo().activeElement()).findElement(By.xpath("//*[@id=\"purchase-ok-button\"]")).click(); //confirm install button
                 System.out.print(packageName+" installed");
@@ -86,7 +85,7 @@ public static void main(String[] args) {
         catch(Exception e)
         {
             result = packageName+" failed to install";
-         //   e.printStackTrace();
+            e.printStackTrace();
         }
         return result;
 
@@ -159,7 +158,7 @@ public static void main(String[] args) {
 
 
         JButton downloadButton=new JButton("Download");
-        downloadButton.setBounds(130,400,140, 40);
+        downloadButton.setBounds(130,390,140, 40);
         downloadButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -176,6 +175,7 @@ public static void main(String[] args) {
                     statusLabel.setText("Status: attempted to download "+packagesToInstall.length+" apks");
 
                     ChromeOptions chromeOptions = new ChromeOptions();
+                   // chromeOptions.addArguments("--headless");
                    WebDriver  driver = new ChromeDriver(chromeOptions);
 
                     driver.manage().window().setSize(new org.openqa.selenium.Dimension(10,10));
@@ -206,6 +206,11 @@ public static void main(String[] args) {
 
             }
         });
+        ImageIcon loading = new ImageIcon("ajax-loader.gif");
+        JLabel loadingLabel = new JLabel("", loading, JLabel.CENTER);
+        loadingLabel.setBounds(150,7,100,30);
+        batchenatorPanel.add(loadingLabel);
+
 
         batchenatorPanel.add(label);
         batchenatorPanel.add(scrollPane);
@@ -240,7 +245,7 @@ public static void main(String[] args) {
 
 
         JLabel deviceModelLabel = new JLabel();
-        deviceModelLabel.setText("Device Model: ");
+        deviceModelLabel.setText("Device Model: please wait . . . ");
         deviceModelLabel.setBounds(10, 10, 300, 20);
         Font deviceModelLabelFont = new Font(Font.SANS_SERIF,  Font.BOLD, 12);
         deviceModelLabel.setFont(deviceModelLabelFont);
@@ -248,7 +253,7 @@ public static void main(String[] args) {
 
 
         JLabel deviceProcessorLabel = new JLabel();
-        deviceProcessorLabel.setText("Device Processor");
+        deviceProcessorLabel.setText("Device Processor: please wait . . .");
         deviceProcessorLabel.setBounds(10, 30, 300, 20);
         Font deviceProcessorFont = new Font(Font.SANS_SERIF,  Font.BOLD, 12);
         deviceProcessorLabel.setFont(deviceProcessorFont);
@@ -284,7 +289,7 @@ public static void main(String[] args) {
 
 
 
-        JButton uninstall3rdPartyPackagesButton =new JButton("Uninstall All 3rd Party Packages");
+        uninstall3rdPartyPackagesButton =new JButton("Uninstall All 3rd Party Packages");
         uninstall3rdPartyPackagesButton.setBounds(50,290,250, 40);
         uninstall3rdPartyPackagesButton.setBackground(Color.CYAN);
         connectedDevicePanel.add(uninstall3rdPartyPackagesButton);
@@ -451,12 +456,15 @@ public static void main(String[] args) {
     }
 
  public  static  void uninstall3rdPartyPackages() {
-
+uninstall3rdPartyPackagesButton.setEnabled(false);
+frame.repaint();
         try
         {
+
             Runtime rt = Runtime.getRuntime();
             Process get3rdPartyPackages = rt.exec("adb shell pm list packages -3");
             new Thread(new Runnable() {
+                int count = 0;
                 public void run() {
                     BufferedReader input = new BufferedReader(new InputStreamReader(get3rdPartyPackages.getInputStream()));
                     Queue<String> packageNamesToUninstall =  new LinkedList<String>();
@@ -478,17 +486,28 @@ public static void main(String[] args) {
                             while(packageNamesToUninstall.peek()!=null)
                             {
                                 String temp = packageNamesToUninstall.peek();
-                                System.out.println("Uninstalling "+(temp));
-                                Process uninstallPackage = rt.exec("adb uninstall "+((LinkedList<String>) packageNamesToUninstall).pop());
-                                input = new BufferedReader(new InputStreamReader(uninstallPackage.getInputStream()));
-                                lines = input.lines();
-                                for (Object o : lines.toArray()) {
-                                    System.out.println("Status :"+o.toString());
-                                    uninstallSatusLabel.setText("Status: Uninstalling "+temp+" - "+o.toString());
-                                    frame.repaint();
+                                if(!temp.contains("google"))
+                                {
+                                    System.out.println("Uninstalling "+(temp));
+                                    Process uninstallPackage = rt.exec("adb uninstall "+((LinkedList<String>) packageNamesToUninstall).pop());
+                                    input = new BufferedReader(new InputStreamReader(uninstallPackage.getInputStream()));
+                                    lines = input.lines();
+                                    for (Object o : lines.toArray()) {
+                                        System.out.println("Status :"+o.toString());
+                                        uninstallSatusLabel.setText("Status: Uninstalling "+temp+" - "+o.toString());
+                                        frame.repaint();
+                                    }
+                                    count ++;
+                                }
+                                else
+                                {
+                                    System.out.println("Skipping Google app: "+((LinkedList<String>) packageNamesToUninstall).pop());
                                 }
 
+
                             }
+                            uninstallSatusLabel.setText("Status: uninstalled "+count+" apps");
+                            frame.repaint();
                         }
 
 
@@ -505,30 +524,32 @@ public static void main(String[] args) {
 
             exc.printStackTrace();
         }
+     uninstall3rdPartyPackagesButton.setEnabled(true);
+     frame.repaint();
 }
 
     public static void uninstallPackages(String [] packages) {
 
 
-        Process uninstallPackagesProces;
+
         for(String packageName: packages)
         {
+            System.out.println(packageName);
 
             // <app package name>
             try
             {
+                Process uninstallPackagesProces;
                 Runtime rt = Runtime.getRuntime();
                 uninstallPackagesProces = rt.exec("adb uninstall "+packageName);
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(uninstallPackagesProces.getInputStream()));
 
                 Stream <String> lines;
                 lines =  bufferedReader.lines();
-
                 for (Object o : lines.toArray()) {
-
-                    System.out.println(o.toString().split("package:")[1]);
-
-
+                    System.out.println("Status :"+o.toString());
+                    uninstallSatusLabel.setText("Status: Uninstalling "+packageName+" - "+o.toString());
+                    frame.repaint();
                 }
 
                 Thread.sleep(2000);
@@ -538,7 +559,7 @@ public static void main(String[] args) {
             catch (Exception exc)
             {
                 exc.printStackTrace();
-                System.out.println("Failed to deleted: "+packageName);
+                System.out.println("Failed to delete: "+packageName);
             }
 
         }
