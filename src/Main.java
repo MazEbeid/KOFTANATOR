@@ -319,7 +319,7 @@ public static void main(String[] args) {
         sideloadPanel.setVisible(false);
 
         dNdLabel = new JLabel();
-        dNdLabel.setVisible(true);
+        dNdLabel.setVisible(false);
         dNdLabel.setText("Drag and drop files here");
         dNdLabel.setBounds(100, 200, 400, 20);
         dNdLabel.setFont(statusFont);
@@ -334,22 +334,83 @@ public static void main(String[] args) {
         apkName.setFont(statusFont);
         sideloadPanel.add(apkName);
 
-        frame.setTitle("Side-load");
-        frame.repaint();
 
         MyDragDropListener dragDropListener =new MyDragDropListener();
 
         new DropTarget(sideloadPanel, dragDropListener);
 
+        JLabel selectLabel = new JLabel();
+        selectLabel.setVisible(true);
+        selectLabel.setText("Select Device");
+        selectLabel.setBounds(10, 10, 400, 20);
+        selectLabel.setFont(statusFont);
+        sideloadPanel.add(selectLabel);
 
 
+       JRadioButton wearRadio =	new JRadioButton("Wear");
+       wearRadio.setBounds(10, 40, 100, 20);
+
+       sideloadPanel.add(wearRadio);
+
+        JLabel textFieldLabel = new JLabel();
+        textFieldLabel.setVisible(true);
+        textFieldLabel.setText("Enter Wear IP Address");
+        textFieldLabel.setBounds(25, 70, 400, 20);
+        textFieldLabel.setFont(statusFont);
+        textFieldLabel.setVisible(false);
+        sideloadPanel.add(textFieldLabel);
+
+       JTextField wearIPField = new JTextField();
+       wearIPField.setBounds(20,90,200,35);
+       wearIPField.setVisible(false);
+       wearIPField.setBackground(Color.white);
+       sideloadPanel.add(wearIPField);
+
+       JButton connectToWear = new JButton("Connect");
+       connectToWear.setVisible(false);
+       connectToWear.setBounds(100,150,100,40);
+       sideloadPanel.add(connectToWear);
+
+        JRadioButton phoneRadio =	new JRadioButton("Phone");
+        phoneRadio.setBounds(150, 40, 200, 20);
+        phoneRadio.setSelected(false);
+        sideloadPanel.add(phoneRadio);
+
+
+
+       wearRadio.addActionListener(new ActionListener() {
+           @Override
+           public void actionPerformed(ActionEvent e) {
+               connectToWear.setVisible(true);
+               textFieldLabel.setVisible(true);
+               wearIPField.setVisible(true);
+               phoneRadio.setSelected(false);
+               wearRadio.setEnabled(false);
+               phoneRadio.setEnabled(true);
+               dNdLabel.setVisible(false);
+
+           }
+       });
+
+       phoneRadio.addActionListener(new ActionListener() {
+           @Override
+           public void actionPerformed(ActionEvent e) {
+               wearRadio.setSelected(false);
+               connectToWear.setVisible(false);
+               textFieldLabel.setVisible(false);
+               wearIPField.setVisible(false);
+               wearRadio.setEnabled(true);
+               phoneRadio.setEnabled(false);
+               dNdLabel.setVisible(true);
+
+           }
+       });
 /////////////////////////////////////////////////////// Sideloading panel //////////////////////////////////////////////
         JMenuBar menuBar = new JMenuBar();
 
         JMenu menu = new JMenu("Menu");
         JMenuItem  cleanDeviceMenuItem = new JMenuItem();
         cleanDeviceMenuItem.addActionListener(e -> {
-
             batchenatorPanel.setVisible(false);
             cleanDeviceMainPanel.setVisible(true);
             sideloadPanel.setVisible(false);
@@ -432,12 +493,15 @@ public static void main(String[] args) {
             cleanDeviceMainPanel.setVisible(false);
             batchenatorPanel.setVisible(false);
             sideloadPanel.setVisible(true);
+            frame.setTitle("Side loading");
+            frame.repaint();
+
         });
 
         menuBar.add(menu);
         batchDownloadApksMenuItem.setText("The Batch-en-ator");
         cleanDeviceMenuItem.setText("Clean device");
-        sideLoadApkMenuItem.setText("Sideloading");
+        sideLoadApkMenuItem.setText("Side loading");
 
         menu.add(batchDownloadApksMenuItem);
         menu.add(sideLoadApkMenuItem);
